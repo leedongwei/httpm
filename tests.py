@@ -11,6 +11,7 @@ from logkeep import LogKeep
 from log_consumer import LogConsumer
 from top_n_sections import TopNSectionsStatistic
 from average_request_size_statistic import AverageRequestSizeStatistic
+from monitor import HTTPLogMonitor
 
 logger = logging.getLogger()
 logger.level = logging.DEBUG
@@ -113,3 +114,18 @@ class AverageRequestSizeStatisticTest(unittest.TestCase):
 
         avg_request_size = statistic._get_avg_request_size(loglines)
         self.assertEqual(avg_request_size, 1234)
+
+class HTTPLogMonitorTest(unittest.TestCase):
+    def test_calculate_stats_get_recent_loglines_from_logkeep(self):
+        logkeep = Mock()
+        monitor = HTTPLogMonitor(logkeep, None, [])
+
+        monitor.calculate_stats()
+        logkeep.read_recent_loglines.assert_called_once()
+
+    def test_calculate_stats_calls_traffic_statistic(self):
+        statistic = Mock() 
+        monitor = HTTPLogMonitor(Mock(), None, [statistic])
+
+        monitor.calculate_stats()
+        statistic.calculate_statistic.assert_called_once()

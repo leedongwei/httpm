@@ -11,7 +11,7 @@ class HTTPLogMonitor:
     def calculate_stats(self):
         recent_loglines = self.logkeep.read_recent_loglines()
         for statistic in self.traffic_stats:
-            statistic.calculate_statistic()
+            statistic.calculate_statistic(recent_loglines)
 
     def get_alert(self):
         pass
