@@ -9,7 +9,7 @@ import time
 from logline import LogLine
 from logkeep import LogKeep
 from log_consumer import LogConsumer
-from top_section_statistic import TopSectionStatistic
+from top_n_sections import TopNSectionsStatistic
 from average_request_size_statistic import AverageRequestSizeStatistic
 
 logger = logging.getLogger()
@@ -71,8 +71,7 @@ class LogConsumerTest(unittest.TestCase):
 
 class TopSectionStatisticTest(unittest.TestCase):
     def test_calculate_statistic(self):
-        statistic = TopSectionStatistic()
-
+        statistic = TopNSectionsStatistic()
         loglines = []
         for _ in range(2):
             line = '\"10.0.0.2\",\"-\",\"apache\",{},\"GET /api/user HTTP/1.0\",200,1234'.format(round(time.time()))
@@ -86,9 +85,13 @@ class TopSectionStatisticTest(unittest.TestCase):
             loglines += [log_line]
             time.sleep(1)
 
-        section_counts = statistic._add_section_counts_for_new_lines(loglines)
-        top_section, hits = statistic._get_top_section(section_counts)
-        self.assertEqual(top_section, '/api')
+        section_counts = statistic._add_counts_for_new_lines(loglines)
+        top_n_sections = statistic.get_top_n_fields(section_counts)
+        logger.debug(top_n_sections)
+        self.assertEqual(len(top_n_sections), 1)
+
+        section, hits = top_n_sections[0]
+        self.assertEqual(section, '/api')
         self.assertEqual(hits, 2)
 
 class AverageRequestSizeStatisticTest(unittest.TestCase):
