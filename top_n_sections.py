@@ -7,7 +7,7 @@ class TopNSectionsStatistic(TopNFieldStatistic):
     def get_field_from_logline(self, logline: Type[LogLine]):
         return logline.get_section()
 
-    def print_top_n_field(self, top_n_fields: List[Tuple[str, int]], message: str):
+    def print_top_n_field(self, top_n_fields: List[Tuple[str, int]]):
         print('The top {} sections over the last {} seconds:'.format(self.n, self.statistic_delay))
         for section, count in top_n_fields:
             print('Section: {}, Hits: {}'.format(section, count))

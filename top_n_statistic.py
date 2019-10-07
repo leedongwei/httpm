@@ -15,7 +15,7 @@ class TopNFieldStatistic(TrafficStatistic):
         top_n = self.get_top_n_fields(counts)
         self.print_top_n_fields(top_n)
 
-    def _add_counts_for_new_lines(self, recent_loglines: List[Type[LogLine]]) -> Dict[str, int]:
+    def _add_counts_for_new_lines(self, recent_loglines: List[Type[LogLine]]) -> Dict[Any, int]:
         counts = {}
         for logline in recent_loglines:
             field = self.get_field_from_logline(logline)
@@ -23,7 +23,7 @@ class TopNFieldStatistic(TrafficStatistic):
 
         return counts
 
-    def get_top_n_fields(self, counts: Dict[str, int]) -> List[Tuple[str, int]]:
+    def get_top_n_fields(self, counts: Dict[Any, int]) -> List[Tuple[str, int]]:
         H = []
         for field, count in counts.items():
             heapq.heappush(H, (-count, field))
@@ -40,5 +40,5 @@ class TopNFieldStatistic(TrafficStatistic):
         pass
 
     @abc.abstractmethod   
-    def print_top_n_field(self, top_n_fields: List[Tuple[str, int]], message: str):
+    def print_top_n_field(self, top_n_fields: List[Tuple[str, int]]):
         pass
