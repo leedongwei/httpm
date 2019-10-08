@@ -12,11 +12,24 @@ from log_consumer import LogConsumer
 from top_n_sections import TopNSectionsStatistic
 from average_request_size_statistic import AverageRequestSizeStatistic
 from monitor import HTTPLogMonitor
+from alert import AlertState
+from alerter import Alerter
 
 logger = logging.getLogger()
 logger.level = logging.DEBUG
 stream_handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(stream_handler)
+
+def generate_loglines(num_lines: int = 5, sleep: int = 0):
+        loglines = []
+        for _ in range(num_lines):
+            line = '\"10.0.0.2\",\"-\",\"apache\",{},\"GET /api/user HTTP/1.0\",200,1234'.format(round(time.time()))
+            log_line = LogLine.from_line(line)
+            loglines += [log_line]
+            if sleep:
+                time.sleep(sleep)
+
+        return loglines
 
 class LogLineTest(unittest.TestCase):
     def test_from_line(self):
@@ -74,17 +87,8 @@ class TopSectionStatisticTest(unittest.TestCase):
     def test_calculate_statistic(self):
         statistic = TopNSectionsStatistic()
         loglines = []
-        for _ in range(2):
-            line = '\"10.0.0.2\",\"-\",\"apache\",{},\"GET /api/user HTTP/1.0\",200,1234'.format(round(time.time()))
-            log_line = LogLine.from_line(line)
-            loglines += [log_line]
-            time.sleep(1)
-
-        for _ in range(1):
-            line = '\"10.0.0.2\",\"-\",\"apache\",{},\"GET /reports HTTP/1.0\",200,1234'.format(round(time.time()))
-            log_line = LogLine.from_line(line)
-            loglines += [log_line]
-            time.sleep(1)
+        loglines += generate_loglines(num_lines=2, sleep=1)
+        loglines += generate_loglines(num_lines=1, sleep=1)
 
         section_counts = statistic._add_counts_for_new_lines(loglines)
         top_n_sections = statistic.get_top_n_fields(section_counts)
@@ -100,17 +104,8 @@ class AverageRequestSizeStatisticTest(unittest.TestCase):
         statistic = AverageRequestSizeStatistic()
         
         loglines = []
-        for _ in range(2):
-            line = '\"10.0.0.2\",\"-\",\"apache\",{},\"GET /api/user HTTP/1.0\",200,1234'.format(round(time.time()))
-            log_line = LogLine.from_line(line)
-            loglines += [log_line]
-            time.sleep(1)
-
-        for _ in range(1):
-            line = '\"10.0.0.2\",\"-\",\"apache\",{},\"GET /reports HTTP/1.0\",200,1234'.format(round(time.time()))
-            log_line = LogLine.from_line(line)
-            loglines += [log_line]
-            time.sleep(1)
+        loglines += generate_loglines(num_lines=2, sleep=1)
+        loglines += generate_loglines(num_lines=1, sleep=1)
 
         avg_request_size = statistic._get_avg_request_size(loglines)
         self.assertEqual(avg_request_size, 1234)
@@ -129,3 +124,57 @@ class HTTPLogMonitorTest(unittest.TestCase):
 
         monitor.calculate_stats()
         statistic.calculate_statistic.assert_called_once()
+
+class AlerterTest(unittest.TestCase):
+    def test_check_if_alert_under_threshold_no_alert(self):
+        alerter = Alerter(alert_check_interval=120, high_traffic_threshold=10)
+        loglines = generate_loglines(num_lines=100, sleep=0)
+
+        has_alert = alerter.check_if_alert(loglines)
+        self.assertFalse(has_alert)
+        self.assertIsNone(alerter.last_alert)
+
+    def test_check_if_alert_over_threshold_has_alert(self):
+        alerter = Alerter(alert_check_interval=120, high_traffic_threshold=10)
+
+        loglines_at_threshold = alerter.high_traffic_threshold * alerter.alert_check_interval
+        loglines = generate_loglines(num_lines=loglines_at_threshold+1, sleep=0)
+
+        has_alert = alerter.check_if_alert(loglines)
+        self.assertTrue(has_alert)
+        self.assertIsNotNone(alerter.last_alert)
+        self.assertEqual(alerter.last_alert.state, AlertState.HIGH_TRAFFIC)
+
+    def test_check_alert_recover_from_high_traffic(self):
+        alerter = Alerter(alert_check_interval=120, high_traffic_threshold=10)
+
+        loglines_at_threshold = alerter.high_traffic_threshold * alerter.alert_check_interval
+        loglines = generate_loglines(num_lines=loglines_at_threshold+1, sleep=0)
+
+        has_alert = alerter.check_if_alert(loglines)
+        self.assertTrue(has_alert)
+        self.assertIsNotNone(alerter.last_alert)
+
+        loglines = generate_loglines(num_lines=100, sleep=0)
+        has_alert = alerter.check_if_alert(loglines)
+        self.assertTrue(has_alert)
+        self.assertIsNotNone(alerter.last_alert)
+        self.assertEqual(alerter.last_alert.state, AlertState.RECOVERED)
+
+    def test_check_if_alert_no_duplicate_alerts_created(self):
+        alerter = Alerter(alert_check_interval=120, high_traffic_threshold=10)
+
+        loglines_at_threshold = alerter.high_traffic_threshold * alerter.alert_check_interval
+        loglines = generate_loglines(num_lines=loglines_at_threshold+1, sleep=0)
+
+        # Generate first alert
+        has_alert = alerter.check_if_alert(loglines)
+        first_alert = alerter.last_alert
+
+        self.assertTrue(has_alert)
+        self.assertIsNotNone(alerter.last_alert)
+        self.assertEqual(alerter.last_alert.state, AlertState.HIGH_TRAFFIC)
+
+        # Try to generate second alert
+        has_alert = alerter.check_if_alert(loglines)
+        self.assertEqual(first_alert.time, alerter.last_alert.time)

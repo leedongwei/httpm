@@ -1,9 +1,10 @@
 from typing import Type, List
 from logkeep import LogKeep
+from alerter import Alerter
 from traffic_statistic import TrafficStatistic
 
 class HTTPLogMonitor:
-    def __init__(self, logkeep: Type[LogKeep], alerter, traffic_stats: List[Type[TrafficStatistic]]):
+    def __init__(self, logkeep: Type[LogKeep], alerter: Type[Alerter], traffic_stats: List[Type[TrafficStatistic]]):
         self.logkeep = logkeep
         self.alerter = alerter
         self.traffic_stats = traffic_stats
@@ -14,4 +15,7 @@ class HTTPLogMonitor:
             statistic.calculate_statistic(recent_loglines)
 
     def get_alert(self):
-        pass
+        if self.alerter.check_if_alert():
+            alert = self.alerter.get_alert()
+            if alert:
+                print(alert)
