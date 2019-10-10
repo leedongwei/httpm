@@ -20,10 +20,10 @@ logger.level = logging.DEBUG
 stream_handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(stream_handler)
 
-def generate_loglines(num_lines: int = 5, sleep: int = 0):
+def generate_loglines(section: str = '/api', num_lines: int = 5, sleep: int = 0):
         loglines = []
         for _ in range(num_lines):
-            line = '\"10.0.0.2\",\"-\",\"apache\",{},\"GET /api/user HTTP/1.0\",200,1234'.format(round(time.time()))
+            line = '\"10.0.0.2\",\"-\",\"apache\",{},\"GET {} HTTP/1.0\",200,1234'.format(round(time.time()), section)
             log_line = LogLine.from_line(line)
             loglines += [log_line]
             if sleep:
@@ -49,50 +49,31 @@ class LogKeepTest(unittest.TestCase):
             logkeep.add_logline(LogLine())
             time.sleep(1)
 
-        logger.debug([l.time for l in logkeep.read_recent_loglines()])
-        logger.debug([l.time for l in logkeep.read_recent_loglines(2)])
-
 class LogConsumerTest(unittest.TestCase):
-    def setUp(self):
-        self.logkeep = Mock()
-        self.consumer = LogConsumer(self.logkeep)
-
     def test_write_to_logkeep(self):
-        def write_log():
-            with open('test.log', 'w') as log:
-                logger.debug('Writing to test log...')
-                for _ in range(10):
-                    log.write('\"10.0.0.2\",\"-\",\"apache\",{},\"GET /api/user HTTP/1.0\",200,1234\n'.format(round(time.time())))
-                    time.sleep(0.5)
-                logger.debug('Finished writing to log.')
-            
-            time.sleep(1)
-            self.consumer._stop()
+        test_log = 'consumertest.log'
+        with open(test_log, 'w', 1) as log:
+            for _ in range(10):
+                log.write('\"10.0.0.2\",\"-\",\"apache\",{},\"GET /api/user HTTP/1.0\",200,1234\n'.format(round(time.time())))
 
-        def consume():
-            self.consumer.consume_log_file('test.log')
-            self.logkeep.add_logline.assert_called()
+        self.logkeep = Mock()
+        self.consumer = LogConsumer(test_log, self.logkeep)
+        self.consumer.consume_next_lines()
+        self.consumer.pygtail = None
+        self.logkeep.add_logline.assert_called()
 
-        t = threading.Thread(target=write_log)
-        t.start()
-        c = threading.Thread(target=consume)
-        c.start()
-
-        t.join()
-        c.join()
-        os.remove('test.log')
-        os.remove('test.log.offset')
+        os.remove(test_log)
+        os.remove('{}.offset'.format(test_log))
 
 class TopSectionStatisticTest(unittest.TestCase):
     def test_calculate_statistic(self):
         statistic = TopNSectionsStatistic()
         loglines = []
-        loglines += generate_loglines(num_lines=2, sleep=1)
-        loglines += generate_loglines(num_lines=1, sleep=1)
+        loglines += generate_loglines(section='/api', num_lines=2, sleep=1)
+        loglines += generate_loglines(section='/report', num_lines=1, sleep=1)
 
         section_counts = statistic._add_counts_for_new_lines(loglines)
         top_n_sections = statistic.get_top_n_fields(section_counts)
-        logger.debug(top_n_sections)
         self.assertEqual(len(top_n_sections), 1)
 
         section, hits = top_n_sections[0]
