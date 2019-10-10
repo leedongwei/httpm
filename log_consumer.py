@@ -1,25 +1,19 @@
 import time
 from typing import Type
 from pygtail import Pygtail
-
 from logline import LogLine
 from logkeep import LogKeep
 
 class LogConsumer:
-    def __init__(self, logkeep: Type[LogKeep]):
+    def __init__(self, file: str, logkeep: Type[LogKeep]):
+        self.pygtail = Pygtail(file, paranoid=True)
         self.logkeep = logkeep
-        self._consuming = False
 
-    def consume_log_file(self, file: str):
-        self._consuming = True
-        while self._consuming:
+    def consume_next_lines(self):
+        while True:
             try:
-                for line in Pygtail(file):
-                    print(line)
+                line = self.pygtail.next()
+                if line:
                     self.logkeep.add_logline(LogLine.from_line(line))
-            except KeyboardInterrupt:
-                raise
-            time.sleep(0.250)
-
-    def _stop(self):
-        self._consuming = False
+            except StopIteration:
+                break
