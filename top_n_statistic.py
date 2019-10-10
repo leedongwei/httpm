@@ -13,7 +13,7 @@ class TopNFieldStatistic(TrafficStatistic):
     def calculate_statistic(self, recent_loglines: List[Type[LogLine]]) -> None:
         counts = self._add_counts_for_new_lines(recent_loglines)
         top_n = self.get_top_n_fields(counts)
-        self.print_top_n_fields(top_n)
+        self.print_top_n_field(top_n)
 
     def _add_counts_for_new_lines(self, recent_loglines: List[Type[LogLine]]) -> Dict[Any, int]:
         counts = {}
@@ -29,7 +29,7 @@ class TopNFieldStatistic(TrafficStatistic):
             heapq.heappush(H, (-count, field))
 
         top_n_fields = []
-        for _ in range(self.n):
+        for _ in range(min(self.n, len(H))):
             count, field = heapq.heappop(H)
             top_n_fields += [(field, -1 * count)]
 

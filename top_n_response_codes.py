@@ -3,6 +3,9 @@ from logline import LogLine
 from typing import Type, List, Tuple, Any
 
 class TopNResponseStatusCodes(TopNFieldStatistic):
+    def __init__(self, n=1, statistic_delay=10):
+        super().__init__(n=n, statistic_delay=statistic_delay)
+        
     def get_field_from_logline(self, logline: Type[LogLine]) -> Any:
         return logline.status
 
