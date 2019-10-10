@@ -17,5 +17,5 @@ class LogLine:
         return LogLine(host, authuser, date, request.replace('"', ''), status, _bytes)
 
     def get_section(self):
-        match = re.match(r'\w+\s(\/\w+[\w\-\.]+)[\/\w+[\w\-\.\/]+]*\s.*', self.request).groups()
+        match = re.match(r'\w+\s(\/\w+[\w+\-\.]*)[\/\w+[\w\-\.\/]*]*\s.*', self.request).groups()
         return match[0]
