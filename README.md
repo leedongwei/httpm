@@ -91,6 +91,8 @@ python3 -m unittest tests.py
 
 ### Possible improvements
 
+- Better organization of files into submodules (folders...)
+
 - One possible improvement could be to use filesystem events to notify the monitor when new lines are written to the log file, instead of continuously polling it. 
 
 - In terms of scalability, I would be interested in possibly expanding on the `LogKeep` idea, but using something like    `RabbitMQ ` instead. I am not sure, however, if this is overkill for a simple log monitor program. 
