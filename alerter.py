@@ -14,13 +14,11 @@ class Alerter:
 
         # Create a HIGH_TRAFFIC alert if there is no previous alert or it is of type RECOVERED
         # and the req/s is above the threshold
-        last_log = recent_loglines[-1]
         if requests_per_second > self.high_traffic_threshold and not self._in_alert():
-            hits = len(recent_loglines)
-            self.last_alert = self._create_alert(AlertState.HIGH_TRAFFIC, hits, time.localtime(last_log.date))
+            self.last_alert = self._create_alert(AlertState.HIGH_TRAFFIC)
         # Create a RECOVERED alert if the current alert is HIGH_TRAFFIC and the req/s has dropped below the threshold
         elif requests_per_second <= self.high_traffic_threshold and self._in_alert():
-            self.last_alert = self._create_alert(AlertState.RECOVERED, time=time.localtime(last_log.date))
+            self.last_alert = self._create_alert(AlertState.RECOVERED)
     
     def get_alert(self) -> Type[Alert]:
         return self.last_alert
@@ -28,5 +26,5 @@ class Alerter:
     def _in_alert(self):
         return self.last_alert and self.last_alert.state == AlertState.HIGH_TRAFFIC
 
-    def _create_alert(self, state: Type[AlertState], hits: int = None, time: int = None) -> Type[Alert]:
-        return Alert(state, hits, time)
+    def _create_alert(self, state: Type[AlertState]) -> Type[Alert]:
+        return Alert(state)

@@ -12,4 +12,4 @@ class AverageRequestSizeStatistic(TrafficStatistic):
         print('The average size of requests received in the last {} seconds is: {} bytes\n'.format(self.statistic_delay, avg_request_size))
 
     def _get_avg_request_size(self, recent_loglines: List[Type[LogLine]]) -> float:
-        return sum([logline.bytes for logline in recent_loglines]) / len(recent_loglines)
+        return round(sum([logline.bytes for logline in recent_loglines]) / len(recent_loglines))

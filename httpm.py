@@ -16,7 +16,7 @@ parser.add_argument('FILE_PATH', type=str, help='path to the access log file to 
 parser.add_argument('-th', '--traffic-threshold', type=int, dest='HIGH_TRAFFIC_THRESHOLD', help='requests/s threshold above which high traffic alerts will be generated', default=10)
 parser.add_argument('-sdi', '--stats-delay-interval', type=int, dest='STATS_DELAY_INTERVAL', help='interval at which the monitor will calculate stats, in seconds', default=10)
 parser.add_argument('-adi', '--alert-delay-interval', type=int, dest='ALERT_DELAY_INTERVAL', help='interval at which the monitor will check for alerts, in seconds', default=120)
-parser.add_argument('-st', '--traffic-stats', nargs='?', dest='TRAFFIC_STATS', choices=['response_codes','request_size'], help='additional traffic stats to measure', default=[])
+parser.add_argument('-st', '--traffic-stats', nargs='+', dest='TRAFFIC_STATS', choices=['response_codes','request_size'], help='additional traffic stats to measure', default=[])
 parser.add_argument('-tn', '--top-n', type=int, dest='TOP_N_VALUE', help='the "N" value to be used by "Top N" statistics', default=3)
 
 args = parser.parse_args()
@@ -32,7 +32,7 @@ def create_traffic_statistics(requested_stats, top_n_value=3):
     if 'response_codes' in requested_stats:
         default_stats += [TopNResponseStatusCodes(n=top_n_value, statistic_delay=STATS_DELAY_INTERVAL)]
     if 'request_size' in requested_stats:
-        default_stats += [AverageRequestSizeStatistic(n=top_n_value, statistic_delay=STATS_DELAY_INTERVAL)]
+        default_stats += [AverageRequestSizeStatistic(statistic_delay=STATS_DELAY_INTERVAL)]
     
     return default_stats
 

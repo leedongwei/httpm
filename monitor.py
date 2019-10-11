@@ -33,11 +33,13 @@ class HTTPLogMonitor:
             # We continuously check for an alert so that we can know the exact time it occured
             self._check_if_alert()
 
-            # we only print at every <alert_delay> interval
+            # We only print at every <alert_delay_interval> seconds
             current_time = time.time()
             if current_time >= next_alert_time:
                 alert = self.alerter.get_alert()
                 if alert and alert is not last_alert:
+                    # Add the current size of the logkeep to the alert i.e. the # of hits in the last <alert_delay_interval> seconds
+                    alert.hits = len(self.logkeep.recent_loglines)
                     print(alert)
                     last_alert = alert
                 else:
