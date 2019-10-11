@@ -13,3 +13,4 @@ class TopNResponseStatusCodes(TopNFieldStatistic):
         print('The top {} response codes over the last {} seconds:'.format(self.n, self.statistic_delay))
         for code, count in top_n_fields:
             print('\tResponse Code: {}, Hits: {}'.format(code, count))
+        print()

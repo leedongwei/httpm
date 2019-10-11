@@ -1,4 +1,8 @@
 import time
+import random
+
+def get_random_sleep_value():
+    return random.random() + random.random()
 
 def log():
     with open('./sample_csv.txt', 'r') as inf:
@@ -8,6 +12,6 @@ def log():
                 if line:
                     print(line)
                     testl.write(line)
-                time.sleep(1)
+                time.sleep(get_random_sleep_value())
 
 log()
