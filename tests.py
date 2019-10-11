@@ -94,16 +94,16 @@ class AverageRequestSizeStatisticTest(unittest.TestCase):
 class HTTPLogMonitorTest(unittest.TestCase):
     def test_calculate_stats_get_recent_loglines_from_logkeep(self):
         logkeep = Mock()
-        monitor = HTTPLogMonitor(logkeep, None, [])
+        monitor = HTTPLogMonitor(None, logkeep, None, [])
 
-        monitor.calculate_stats()
+        monitor._calculate_stats()
         logkeep.read_recent_loglines.assert_called_once()
 
     def test_calculate_stats_calls_traffic_statistic(self):
         statistic = Mock() 
-        monitor = HTTPLogMonitor(Mock(), None, [statistic])
+        monitor = HTTPLogMonitor(None, Mock(), None, [statistic])
 
-        monitor.calculate_stats()
+        monitor._calculate_stats()
         statistic.calculate_statistic.assert_called_once()
 
 class AlerterTest(unittest.TestCase):
@@ -122,7 +122,7 @@ class AlerterTest(unittest.TestCase):
         loglines = generate_loglines(num_lines=loglines_at_threshold+1, sleep=0)
 
         has_alert = alerter.check_if_alert(loglines)
-        self.assertTrue(has_alert)
+
         self.assertIsNotNone(alerter.last_alert)
         self.assertEqual(alerter.last_alert.state, AlertState.HIGH_TRAFFIC)
 
@@ -133,12 +133,11 @@ class AlerterTest(unittest.TestCase):
         loglines = generate_loglines(num_lines=loglines_at_threshold+1, sleep=0)
 
         has_alert = alerter.check_if_alert(loglines)
-        self.assertTrue(has_alert)
         self.assertIsNotNone(alerter.last_alert)
 
         loglines = generate_loglines(num_lines=100, sleep=0)
         has_alert = alerter.check_if_alert(loglines)
-        self.assertTrue(has_alert)
+
         self.assertIsNotNone(alerter.last_alert)
         self.assertEqual(alerter.last_alert.state, AlertState.RECOVERED)
 
@@ -152,10 +151,9 @@ class AlerterTest(unittest.TestCase):
         has_alert = alerter.check_if_alert(loglines)
         first_alert = alerter.last_alert
 
-        self.assertTrue(has_alert)
         self.assertIsNotNone(alerter.last_alert)
         self.assertEqual(alerter.last_alert.state, AlertState.HIGH_TRAFFIC)
 
         # Try to generate second alert
-        has_alert = alerter.check_if_alert(loglines)
+        alerter.check_if_alert(loglines)
         self.assertEqual(first_alert.time, alerter.last_alert.time)
